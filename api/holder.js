@@ -1,23 +1,40 @@
+// /api/getHolders.js
 export default async function handler(req, res) {
-    const TOKEN_ADDRESS =
-        "6wCYEZEBFQC7CHndo7p7KejyM4oGgi5E1Ya1e9eQpump"
+    const API_KEY = process.env.HELIUS_API_KEY; // stored in Vercel env
+    const MINT = req.query.mint;
+
+    if (!MINT)
+        return res.status(400).json({ error: "Missing mint query parameter" });
+
+    const body = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "getTokenAccountsByMint",
+        params: [
+            MINT,
+            { programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" },
+            { encoding: "jsonParsed" },
+        ],
+    };
 
     try {
         const response = await fetch(
-            `https://api.solscan.io/token/meta?tokenAddress=${TOKEN_ADDRESS}`,
+            `https://mainnet.helius-rpc.com/?api-key=${API_KEY}`,
             {
-                headers: {
-                    token: process.env.SOLSCAN_API_KEY,
-                },
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
             }
-        )
+        );
 
-        const data = await response.json()
+        const data = await response.json();
+        const holders = data.result.value;
+        const uniqueOwners = new Set(
+            holders.map((a) => a.account.data.parsed.info.owner)
+        );
 
-        res.status(200).json({
-            holders: data?.data?.holder ?? null,
-        })
+        res.status(200).json({ totalHolders: uniqueOwners.size });
     } catch (err) {
-        res.status(500).json({ error: "Failed to fetch holders" })
+        res.status(500).json({ error: err.message });
     }
 }
