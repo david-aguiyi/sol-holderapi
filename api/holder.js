@@ -24,10 +24,11 @@ export default async function handler(req, res) {
             id: 1,
             method: "getTokenAccounts",
             params: [
-                { mint: MINT },
-                { limit: 1000 }, // fetch up to 1000 accounts per request
+                MINT, // string
+                { limit: 1000 }, // options object
             ],
         };
+
 
         // Fetch from Helius DAS with timeout
         const controller = new AbortController();
